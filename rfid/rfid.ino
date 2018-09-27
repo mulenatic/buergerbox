@@ -171,6 +171,11 @@ void readCardID() {
   Serial.print("Die ID des RFID-TAGS lautet: ");
   Serial.println(RFID_UID);
 
+  cardId = RFID_UID;
+
+  Serial.print("Verbesserte cardId: ");
+  Serial.println(cardId);
+
   
 
   //====================
