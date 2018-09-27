@@ -1,5 +1,5 @@
 #include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
+#include <ESP8266WebServerSecure.h>
 
 const byte pin_realais_1 = D5;
 const byte pin_realais_2 = D6;
@@ -9,7 +9,65 @@ const byte pin_realais_4 = D8;
 const char* ssid = "buergerbox";
 const char* password = "t-systems";
 
-ESP8266WebServer server(80);
+BearSSL::ESP8266WebServerSecure server(443);
+
+
+static const char serverCert[] PROGMEM = R"EOF(
+-----BEGIN CERTIFICATE-----
+MIIDXTCCAkWgAwIBAgIJAMchveZAAyuOMA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNV
+BAYTAkRFMRMwEQYDVQQIDApTb21lLVN0YXRlMSEwHwYDVQQKDBhJbnRlcm5ldCBX
+aWRnaXRzIFB0eSBMdGQwHhcNMTgwODA2MTIyNTI1WhcNMjkxMDIzMTIyNTI1WjBF
+MQswCQYDVQQGEwJERTETMBEGA1UECAwKU29tZS1TdGF0ZTEhMB8GA1UECgwYSW50
+ZXJuZXQgV2lkZ2l0cyBQdHkgTHRkMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIB
+CgKCAQEAtojQwytSsXu/iOo1bTInCcK6y1avnBakKv2tgAsbluFpb8h1HTRN3YTx
+/2KFsabzzWzOfyRkJptjuWyMn8Bn4k5KSMkcvpXh+QaMQNVz6+N5kzILmxrIkXPy
+t+fm4oye1bMa6W7GG9ZjCmIjI9X/88FcoajLKGqS3Zs/dzuXRWkYzmhCz9EHW45X
+BpRscCM70knpt4iLa5LqVT2HNZI8l4pVhQMNx2RbhPFQTlecp93ZDjlLX4Vgudqx
+I1eiTHjsUmVIXNaYTck+1Fj4TAevolqPVB3lPWYndYvuhFdEzCoiCew+zOOgxcES
+WJSRlgebCWGWpAfkDYAORv6wiwBpTwIDAQABo1AwTjAdBgNVHQ4EFgQU2zEt/hET
+kUPSp4kjiur4VmhAfKcwHwYDVR0jBBgwFoAU2zEt/hETkUPSp4kjiur4VmhAfKcw
+DAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAqA445b4yVJ2a4Z5Wv+IA
+0dNiCYCtOQrpcgrVwgYbNf+zdsSiaiDOO51GYKzLlxsPp3q2Rsqv8GTDp+PSFmkK
+Rn53FRPhJfe1iTIoyy+pBd4oztmidYOSRrC2ARhOdQPPIHHGLffz3R0FOa/gF2eC
+MDU8E1NdfJriGDlJfJaRopZN69yZJi5XVRDrJj4MFhDSkuujH4UrATYb+kzdyV1m
+Hgnrvg3L9/7pxA09WgfW9KHlYPMLQoTETCxiJ3CQE1ilCojo83b3sLKt/7paBfce
+++t+4yxXpj2IKziTu6wLPo/YYGteNfoh/vns2J5bdfRbkyICX59BXPo5X2+LnjEs
+tg==
+-----END CERTIFICATE-----
+)EOF";
+
+static const char serverKey[] PROGMEM = R"EOF(
+-----BEGIN PRIVATE KEY-----
+MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQC2iNDDK1Kxe7+I
+6jVtMicJwrrLVq+cFqQq/a2ACxuW4WlvyHUdNE3dhPH/YoWxpvPNbM5/JGQmm2O5
+bIyfwGfiTkpIyRy+leH5BoxA1XPr43mTMgubGsiRc/K35+bijJ7VsxrpbsYb1mMK
+YiMj1f/zwVyhqMsoapLdmz93O5dFaRjOaELP0QdbjlcGlGxwIzvSSem3iItrkupV
+PYc1kjyXilWFAw3HZFuE8VBOV5yn3dkOOUtfhWC52rEjV6JMeOxSZUhc1phNyT7U
+WPhMB6+iWo9UHeU9Zid1i+6EV0TMKiIJ7D7M46DFwRJYlJGWB5sJYZakB+QNgA5G
+/rCLAGlPAgMBAAECggEAOLCxNYxE+H5YdCtZQHqtCSkDXpejnrShdACpW/UXMnr7
+hg4Z4WIXNM9PYWO15gDWA1zhnTcuK5djF3mRCyR0nyJ1i7l6Re7C6daQxKoGgKJ7
+Za3LUPa2iAYcweUyHfZSdkhT+V/AA3FH/TeRdlXGUmwhWsvTnM/MoSrQQTWuu41r
+i8sramPZjmneqLiRaHQWsdqj86W20EfffIgURbokQSHXU5SG5ku+fM9USr+Kd0iT
+yEvOJCj4NSptEWYFO0vphl4L81iz4Jxy8Hk0wSHFXvsgBzAoliWD0Y8bXMixhdfY
+vVYtglEf03oonh3iIp8sfXtbA/QWZzSVl55WKNEmgQKBgQDui/SzksSYSj3Hfs0x
+v0GeYRnyjJu/gLzJzuMXYmbwFKMUmqb1Y31xnacPzjwLb+5T2aSmzjpTdSiuXK7H
+0eBGK/zOuDNWq+dKJz/5X5Hmwl0Vau9fVPXfChwKdgnKlRgZcM5RnGSRyziNFxL9
+vSkY/kVzyqCxpSUuG32tj7a3YQKBgQDD47wXNJsWUX3gRQ1oz9poA58gd9o5/p/l
+dNNrzXQsJXPDJiEZ8IJPWH0gTSVwFE2pRC6Ivy/HiaL3Ia5USW3zeOVdU5Szl5Cp
+RpcUx2aI2L1EwUI/S3JLs5G80NlPEWWD0P/OPiwr+XobDIyRJjQe7OamnlncQu/7
+qVqnRynOrwKBgQCSK5RQDNkGcEeW3K4jk4xD3kAmDd7J47rK9kjU5WkqJ5seXv17
+U/FkEzRxTPAiGf4xxyVLSQcYaKv627QFoScKGJ4alWhv7XoWSCK9TcB7ZBHhs9rl
+0YuvleREzLuHNQDFZggmnexKIfqPCdqLPMPYGsa4Ayugbw9vR00lcvCFQQKBgQCv
+GSDnCUHbqEpBLtg2qRzMPvh9WES79EtPGqdlREgksfGRLcMG4cJJVIq8VdkyHyPw
+Op7x4xu9W91M1FF0zBI5QQac7noMMl2/wfaIP1j61+oOzEUAONtYqZGK2pB0qdM5
+CZeu7kojoKOyC/yWPjT2s8HUi9U9GqRTKuV6gxTuxwKBgQDHLVa4q/QQv3nNPxwK
+XRrwPqGugKhMtC+MNHzK2sqzlKvAUNEVAjtIip1rKOR9pxLmj4u1KEqOEyO3yfAf
+BcJgUkaQ/SCzkb0TTOo0IvJuBrPvkOE3cr/YyExFOsQaYDMWHkZIZSTw3O8vbiOB
+tW3MCH719OOzgSnGa41atT7v5Q==
+-----END PRIVATE KEY-----
+)EOF";
+
+
 
 void handleLockOpenGet() {
 
@@ -97,6 +155,15 @@ void setup() {
   WiFi.begin(ssid, password);
   WiFi.hostname("arudinoLock");
 
+  Serial.print("Connecting");
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println();
+
+  server.setRSACert(new BearSSLX509List(serverCert), new BearSSLPrivateKey(serverKey));
 
   server.on("/", HTTP_GET, handleRoot);
   server.on("/lock/open", HTTP_GET, handleLockOpenGet);

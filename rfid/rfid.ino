@@ -19,14 +19,21 @@ MFRC522::MIFARE_Key key;
 
 HTTPClient client;
 HTTPClient clientLock;
-const String hostLockBackup = "192.168.2.104";
+const String hostLockBackup = "192.168.4.2";
 String hostLock = "";
+const String instanceURL = "https://dev51124.service-now.com";
 
 ESP8266WebServer server(80);
 
-const char* fingerprint = "dc a6 d8 b8 0a ea 7e 0b 32 77 14 05 2f 27 b2 90 32 b7 7e b2";
+const char* fingerprint = "45 8b 95 cd 4b 67 60 83 4e f7 b9 5e 65 ba d8 4f c8 27 32 cc";
+const char* fingerprintLock = "DA DC FA 4C F4 1B 9B AB 0C A5 70 8B 51 3E 78 07 AD 02 3C 34";
 
-//ESP8266WebServer server(80);
+const char* ssid = "buergerbox";
+const char* password = "t-systems";
+
+int RFID_UID_Nr = 0;
+String RFID_UID = "";
+int StrLen = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -98,6 +105,8 @@ void setup() {
     });
 
   ArduinoOTA.begin();
+
+  
   Serial.println("Ready for RFID reading");
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());      
@@ -143,6 +152,23 @@ void readCardID() {
 
   cardId = String(code);
 
+  RFID_UID_Nr = 0;
+  for (byte i = 0; i < mfrc522.uid.size; i++)
+  {
+    RFID_UID_Nr = RFID_UID_Nr * 256 + mfrc522.uid.uidByte[mfrc522.uid.size-i-1];
+  }
+
+  RFID_UID = String(RFID_UID_Nr);
+  StrLen = RFID_UID.length();
+  for (byte i = 0; i < 10 - StrLen; i++)
+  {
+     RFID_UID = "0" + RFID_UID;
+  }
+  Serial.print("Die ID des RFID-TAGS lautet: ");
+  Serial.println(RFID_UID);
+
+  
+
   //====================
 
 
@@ -156,7 +182,7 @@ void readCardID() {
   Serial.println(cardId);
 
 
-  String url = "https://poc9.osnow.de/api/x_buergerbox/buergerboxrestapi/buergerbox/kartenid/" + cardId;
+  String url = instanceURL + "/api/x_buergerbox/buergerboxrestapi/buergerbox/kartenid/" + cardId;
   client.begin(url, fingerprint);
   client.setAuthorization("bm9kZU1DVToxMTEx");
 
@@ -166,7 +192,7 @@ void readCardID() {
   Serial.println(httpCode);
 
   if (httpCode <= 0 ) {
-    Serial.println("Unexpected failure communicatig to lock.");
+    Serial.println("Unexpected failure communicating to ServiceNow.");
   } else {
 
     StaticJsonBuffer<200> jsonBuffer;
@@ -190,12 +216,12 @@ void readCardID() {
 
 
       //==============================
-      //if(!openLock(boxid)) {
-  //Serial.println("Error opening lock");
-  //Serial.println(payload);
-      //} else {
+      if(!openLock(boxid)) {
+  Serial.println("Error opening lock");
+  Serial.println(payload);
+      } else {
   releaseBox(boxid, cardId);
-      //}
+      }
       
       delay(1000);
 
@@ -212,7 +238,7 @@ boolean openLock(int boxid) {
   if (hostLock != "" ){
     host =  hostLock;
   }
-  String urlLock = "http://" + host + "/lock/open?number=" + String(boxid);
+  String urlLock = "https://" + host + "/lock/open?number=" + String(boxid);
   Serial.print("Openeing url: ");
   Serial.println(urlLock);
   clientLock.begin(urlLock);
@@ -246,7 +272,7 @@ boolean releaseBox(int boxid, String cardId) {
   Serial.print(" and cardId " );
   Serial.println(cardId);
 
-  String url = "https://poc9.osnow.de/api/x_buergerbox/buergerboxrestapi/buergerbox/box/" + String(boxid);
+  String url = instanceURL + "/api/x_buergerbox/buergerboxrestapi/buergerbox/box/" + String(boxid);
   url = url + "/kartenid/" + cardId;
   Serial.println(url);
   client.begin(url, fingerprint);
