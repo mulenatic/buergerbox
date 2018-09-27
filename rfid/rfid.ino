@@ -35,6 +35,8 @@ int RFID_UID_Nr = 0;
 String RFID_UID = "";
 int StrLen = 0;
 
+void(* resetFunc) (void) = 0; //declare reset function @ address 0
+
 void setup() {
   Serial.begin(115200);
   Serial.println("Booting");
@@ -109,7 +111,9 @@ void setup() {
   
   Serial.println("Ready for RFID reading");
   Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());      
+  Serial.println(WiFi.localIP());  
+
+  clientLock.setTimeout(10000);
 }
 
 void loop() {
@@ -217,13 +221,15 @@ void readCardID() {
 
       //==============================
       if(!openLock(boxid)) {
-  Serial.println("Error opening lock");
-  Serial.println(payload);
+        Serial.println("Error opening lock");
+        Serial.println(payload);
       } else {
-  releaseBox(boxid, cardId);
+        releaseBox(boxid, cardId);
       }
       
       delay(1000);
+      resetFunc();
+
 
     }
   }
@@ -238,7 +244,7 @@ boolean openLock(int boxid) {
   if (hostLock != "" ){
     host =  hostLock;
   }
-  String urlLock = "https://" + host + "/lock/open?number=" + String(boxid);
+  String urlLock = "http://" + host + "/lock/open?number=" + String(boxid);
   Serial.print("Openeing url: ");
   Serial.println(urlLock);
   clientLock.begin(urlLock);
@@ -261,6 +267,7 @@ boolean openLock(int boxid) {
 
     }
   }
+  clientLock.end();
 }
 
 
@@ -348,3 +355,6 @@ void handlePostLockIp() {
 
   handleGetLockIp();
 }
+
+
+
