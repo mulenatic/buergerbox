@@ -6,8 +6,11 @@ const byte pin_realais_2 = D6;
 const byte pin_realais_3 = D7;
 const byte pin_realais_4 = D8;
 
-const char* ssid = "buergerbox";
-const char* password = "t-systems";
+//const char* ssid = "buergerbox";
+//const char* password = "t-systems";
+const char* ssid = "HUAWEI-4832";
+const char* password = "47059578";
+
 
 ESP8266WebServer server(80);
 

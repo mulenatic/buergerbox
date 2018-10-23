@@ -1,7 +1,5 @@
 #include <ESP8266WiFi.h>
-#include <ESP8266mDNS.h>
-#include <ArduinoOTA.h>
-#include <WiFiManager.h>
+#include <ESP8266WebServer.h>
 
 #include <ArduinoJson.h>
 
@@ -19,7 +17,7 @@ MFRC522::MIFARE_Key key;
 
 HTTPClient client;
 HTTPClient clientLock;
-const String hostLockBackup = "192.168.4.2";
+const String hostLockBackup = "192.168.8.100";
 String hostLock = "";
 const String instanceURL = "https://dev51124.service-now.com";
 
@@ -52,65 +50,23 @@ void setup() {
   SPI.begin();
   mfrc522.PCD_Init();
 
-  WiFiManager wifiManager;
-  wifiManager.autoConnect(ssid, password);
-
   // Port defaults to 8266
-  ArduinoOTA.setPort(8266);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  WiFi.hostname("rfid");
 
-  // HostSNname default to esp8266-[ChipId]
-  ArduinoOTA.setHostname("RFIDMCU");
-
-  // No authentication by default
-  // ArduinoOTA.setPassword("admin");
-
-  // Password can be set with it's md5 value as well
-
-  // ArduinoOTA.setPasswordHash(xxx);
+  Serial.print("Connecting");
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println();
 
   server.on("/lockIP", HTTP_GET, handleGetLockIp);
   server.on("/lockIP", HTTP_POST, handlePostLockIp);
   server.begin();
   Serial.println("ESP8266WebServer started");
-
-
-  ArduinoOTA.onStart([]() {
-      String type;
-      if (ArduinoOTA.getCommand() == U_FLASH) {
-  type == "sketch";
-      } else {
-  type = "filesystem";
-      }
-
-      // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-      Serial.println("Start updating" + type);
-    });
-
-  ArduinoOTA.onEnd([]() {
-      Serial.println("\nEND");
-    });
-
-  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-      Serial.printf("Progress: %u%%\r", (progress / ( total / 100 )));
-    });
-
-  ArduinoOTA.onError([](ota_error_t error) {
-      Serial.printf("Error[%u]: ", error);
-      if (error == OTA_AUTH_ERROR) {
-  Serial.println("Auth failed");
-      } else if (error == OTA_BEGIN_ERROR) {
-  Serial.println("Begin failed");
-      } else if (error == OTA_CONNECT_ERROR) {
-  Serial.println("Connect failed");
-      } else if (error == OTA_RECEIVE_ERROR) {
-  Serial.println("Receive failed");
-      } else if (error == OTA_END_ERROR) {
-  Serial.println("End failed");
-      }
-    });
-
-  ArduinoOTA.begin();
-
   
   Serial.println("Ready for RFID reading");
   Serial.print("IP address: ");
@@ -122,7 +78,6 @@ void setup() {
 
 void loop() {
 
-  ArduinoOTA.handle();
   readCardID();
   server.handleClient();
 
