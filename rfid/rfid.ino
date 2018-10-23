@@ -28,8 +28,11 @@ ESP8266WebServer server(80);
 const char* fingerprint = "45 8b 95 cd 4b 67 60 83 4e f7 b9 5e 65 ba d8 4f c8 27 32 cc";
 const char* fingerprintLock = "DA DC FA 4C F4 1B 9B AB 0C A5 70 8B 51 3E 78 07 AD 02 3C 34";
 
-const char* ssid = "buergerbox";
-const char* password = "t-systems";
+//const char* ssid = "buergerbox";
+//const char* password = "t-systems";
+const char* ssid = "HUAWEI-4832";
+const char* password = "47059578";
+
 
 int RFID_UID_Nr = 0;
 String RFID_UID = "";
@@ -50,7 +53,7 @@ void setup() {
   mfrc522.PCD_Init();
 
   WiFiManager wifiManager;
-  wifiManager.autoConnect();
+  wifiManager.autoConnect(ssid, password);
 
   // Port defaults to 8266
   ArduinoOTA.setPort(8266);
@@ -113,6 +116,7 @@ void setup() {
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());  
 
+  //client.setTimeout(20000);
   clientLock.setTimeout(10000);
 }
 
@@ -191,51 +195,58 @@ void readCardID() {
   Serial.println(cardId);
 
 
-  String url = instanceURL + "/api/x_buergerbox/buergerboxrestapi/buergerbox/kartenid/" + cardId;
+  String url = instanceURL + "/api/x_buergerbox/buergerboxrestapi/buergerbox/findAndRelease/kartenid/" + cardId;
   client.begin(url, fingerprint);
   client.setAuthorization("bm9kZU1DVToxMTEx");
 
-  int httpCode =  client.GET();
+  boolean reachedSN = false;
 
-  Serial.print("Statuscode: ");
-  Serial.println(httpCode);
+  while(!reachedSN) {
 
-  if (httpCode <= 0 ) {
-    Serial.println("Unexpected failure communicating to ServiceNow.");
-  } else {
-
-    StaticJsonBuffer<200> jsonBuffer;
-    String payload = client.getString();
-    Serial.println(payload);
-
-    if (httpCode != HTTP_CODE_OK) {
-
-      Serial.println("Error from ServiceNow");
-      Serial.println(payload);
-      
+    int httpCode =  client.GET();
+  
+    Serial.print("Statuscode: ");
+    Serial.println(httpCode);
+  
+    if (httpCode <= 0 ) {
+      Serial.println("Unexpected failure communicating to ServiceNow.");
     } else {
 
-      JsonObject& root = jsonBuffer.parseObject(payload);
+      reachedSN = true;
+      StaticJsonBuffer<200> jsonBuffer;
+      String payload = client.getString();
+      Serial.println(payload);
   
-      const char* success = root["result"]["success"];
-      int boxid = root["result"]["boxid"];
-
-      Serial.print("Got answer from ServiceNow, boxid: ");
-      Serial.println(boxid);
-
-
-      //==============================
-      if(!openLock(boxid)) {
-        Serial.println("Error opening lock");
+      if (httpCode != HTTP_CODE_OK) {
+  
+        Serial.println("Error from ServiceNow");
         Serial.println(payload);
+        
       } else {
-        releaseBox(boxid, cardId);
+  
+        JsonObject& root = jsonBuffer.parseObject(payload);
+    
+        const char* success = root["result"]["success"];
+        int boxid = root["result"]["boxid"];
+  
+        Serial.print("Got answer from ServiceNow, boxid: ");
+        Serial.println(boxid);
+  
+  
+        //==============================
+        if(!openLock(boxid)) {
+          Serial.println("Error opening lock");
+          Serial.println(payload);
+        } else {
+          //releaseBox(boxid, cardId);
+          Serial.println("Box opened");
+        }
+        
+        delay(1000);
+        client.end();
+        //resetFunc();
+  
       }
-      
-      delay(1000);
-      resetFunc();
-
-
     }
   }
 }
@@ -253,26 +264,35 @@ boolean openLock(int boxid) {
   Serial.print("Openeing url: ");
   Serial.println(urlLock);
   clientLock.begin(urlLock);
-  int httpLockCode = clientLock.GET();
 
-  Serial.print("httpLockCode: ");
-  Serial.println(httpLockCode);
-  if (httpLockCode <= 0) {
-    Serial.println("Unexpected failure communicatig to lock.");
-    return false;
-  } else {
+  boolean lockOpened = false;
 
-    if (httpLockCode != HTTP_CODE_OK) {
-      Serial.println("Could not open lock");
+  while(!lockOpened) {
+  
+    int httpLockCode = clientLock.GET();
+  
+    Serial.print("httpLockCode: ");
+    Serial.println(httpLockCode);
+    if (httpLockCode <= 0) {
+      Serial.println("Unexpected failure communicatig to lock.");
       return false;
     } else {
-
-      Serial.println("Successfully opened lock");
-      return true;
-
+  
+      if (httpLockCode != HTTP_CODE_OK) {
+        Serial.println("Could not open lock");
+        
+      } else {
+  
+        Serial.println("Successfully opened lock");
+        lockOpened = true;      
+  
+      }
     }
+
   }
   clientLock.end();
+  return true;
+  
 }
 
 
