@@ -24,10 +24,8 @@ const char* fingerprintLock = "DA DC FA 4C F4 1B 9B AB 0C A5 70 8B 51 3E 78 07 A
 
 //const char* ssid = "buergerbox";
 //const char* password = "t-systems";
-//const char* ssid = "HUAWEI-4832";
-//const char* password = "47059578";
-const char* ssid = "WLAN-6LJK5P";
-const char* password = "7330401080787168";
+const char* ssid = "HUAWEI-4832";
+const char* password = "47059578";
 
 rdm630 rfid(CO2_TX, CO2_RX);  //TX-pin of RDM630 connected to Arduino pin 6
 
